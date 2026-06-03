@@ -41,10 +41,18 @@ let
   nonEmptyValue = x: nonEmpty x && (x ? value -> nonEmpty x.value);
   nonEmpty = x: x != { } && x != [ ];
 
+  materializeLocalPath =
+    name: path:
+    pkgs.runCommandLocal "minecraft-server-local-path" { src = path; } ''
+      cp -r --dereference "$src" "$out"
+    '';
+
   configToPath =
     name: config:
-    if
-      isStringLike config # Includes paths and packages
+    if builtins.typeOf config == "path" then
+      materializeLocalPath name config
+    else if
+      isStringLike config # Includes packages and strings
     then
       config
     else
